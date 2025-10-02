@@ -17,8 +17,22 @@ body { background: #f4f6f8; color:#222; min-height:100vh; display:flex; justify-
 .header-right { position:absolute; right:0; display:flex; gap:10px; align-items:center; }
 
 /* buttons, tabs */
-.tabs { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:18px; }
-.tab-button { background:#0d6efd; color:#fff; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; }
+.tabs { 
+  display:flex; 
+  gap:12px; 
+  justify-content:center; 
+  flex-wrap:wrap; 
+  margin-bottom:18px; 
+}
+.tab-button { 
+  background:#0d6efd; 
+  color:#fff; 
+  border:none; 
+  padding:10px 18px; 
+  border-radius:8px; 
+  cursor:pointer; 
+  text-align: center;
+}
 .tab-button.active { background:#198754; box-shadow: 0 4px 8px rgba(0,0,0,0.12); }
 .tab-button:hover { opacity:0.95; }
 
@@ -98,7 +112,9 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
   white-space: nowrap;  /* cegah teks patah */
 }
 
-/* Responsif untuk layar kecil */
+/* ===================================================
+   Responsif untuk layar kecil (≤768px)
+   =================================================== */
 @media (max-width: 768px) {
   /* Header responsif */
   .app-header {
@@ -118,7 +134,29 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
     width: 100%;
     margin-top: 8px;
     flex-wrap: wrap;
- 
+  }
+  #darkModeToggle {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px 12px;
+    font-size: 14px;
+    margin: 0 auto;
+    display: block;
+  }
+
+  /* Tabs jadi grid 6 kolom */
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin: 10px 0;
+  }
+  .tab-button {
+    width: 100%;
+    padding: 10px 6px;
+    font-size: 12px;
+  }
+
   /* Dashboard cards */
   .dashboard-row {
     flex-direction: column;
@@ -158,29 +196,3 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
     width: 100%;
   }
 }
-
-@media (max-width: 768px) {
-  /* Tabs jadi grid 4 kolom */
-  .tabs {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4 kolom */
-    gap: 8px;
-    width: 100%;
-  }
-  .tab-button {
-    width: 100%;
-    max-width: unset;   /* hilangkan batasan max 200px */
-    text-align: center;
-    font-size: 14px;
-    padding: 8px 10px;
-  }
-
-  /* Dark Mode toggle biar tidak terlalu kecil */
-  #darkModeToggle {
-    min-width: 100px;    /* lebar minimum */
-    min-height: 40px;    /* tinggi minimum */
-    padding: 10px 16px;  /* ruang klik lebih besar */
-    font-size: 15px;
-
-
-
