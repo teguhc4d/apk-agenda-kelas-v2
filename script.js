@@ -1,6 +1,11 @@
 /* ===================================================
+  script.js - Aplikasi Agenda Kelas (LocalStorage)
+  Final (perbaikan: jadwal responsif & session guru)
+   =================================================== */
+
+/* ===================================================
    script.js - Aplikasi Agenda Kelas (LocalStorage)
-   Final (perbaikan: jadwal responsif & session guru)
+   Final (perbaikan: login/logout UI guru)
    =================================================== */
 
 /* ---------- KEY localStorage (per kelas) ---------- */
@@ -45,7 +50,6 @@ if (darkToggle) {
 
 /* ---------- KELAS (multi-class) ---------- */
 function gantiKelas(kelas) {
-  // menyimpan pilihan kelas otomatis (opsional)
   localStorage.setItem('agendaApp_selectedKelas', kelas);
   muatSemuaData();
 }
@@ -59,12 +63,8 @@ function requestNotifPermission() {
 requestNotifPermission();
 
 /* ---------- SISWA CRUD ---------- */
-function getSiswa() {
-  return JSON.parse(localStorage.getItem(key('siswa')) || '[]');
-}
-function simpanSiswa(arr) {
-  localStorage.setItem(key('siswa'), JSON.stringify(arr));
-}
+function getSiswa() { return JSON.parse(localStorage.getItem(key('siswa')) || '[]'); }
+function simpanSiswa(arr) { localStorage.setItem(key('siswa'), JSON.stringify(arr)); }
 function tambahSiswa() {
   const elNama = document.getElementById('siswaNama');
   const elNIS = document.getElementById('siswaNIS');
@@ -82,8 +82,6 @@ function tambahSiswa() {
   renderSiswaTable();
   populateSiswaSelect();
 }
-
-/* render table siswa */
 function renderSiswaTable() {
   const tbody = document.getElementById('siswaTable');
   if (!tbody) return;
@@ -139,7 +137,6 @@ function importSiswaExcel() {
   if (!fileInput || !fileInput.files.length) return alert("Pilih file Excel/CSV dulu!");
   const file = fileInput.files[0];
   const reader = new FileReader();
-
   reader.onload = (e) => {
     try {
       const data = new Uint8Array(e.target.result);
@@ -147,11 +144,9 @@ function importSiswaExcel() {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(sheet);
-
       const arr = getSiswa();
       let added = 0;
       rows.forEach(r => {
-        // accept columns: NIS, Nama, Kelas (case-insensitive)
         const nis = r.NIS ?? r.nis ?? r['No'] ?? r['Nomor'] ?? r['Id'] ?? null;
         const nama = r.Nama ?? r.nama ?? r.Name ?? null;
         const kelas = r.Kelas ?? r.kelas ?? r.Class ?? null;
@@ -176,17 +171,12 @@ function importSiswaExcel() {
       alert('Gagal membaca file. Pastikan format Excel benar.');
     }
   };
-
   reader.readAsArrayBuffer(file);
 }
 
 /* ---------- DOWNLOAD TEMPLATE EXCEL ---------- */
 function downloadTemplateSiswa() {
-  const ws_data = [
-    ["NIS", "Nama", "Kelas"],
-    ["12345", "Budi Santoso", "XI-RPL"],
-    ["12346", "Siti Aminah", "XI-RPL"]
-  ];
+  const ws_data = [["NIS", "Nama", "Kelas"], ["12345", "Budi Santoso", "XI-RPL"], ["12346", "Siti Aminah", "XI-RPL"]];
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(ws_data);
   XLSX.utils.book_append_sheet(wb, ws, "TemplateSiswa");
@@ -485,6 +475,7 @@ function importAllJSON() {
   r.readAsText(f.files[0]);
 }
 
+
 /* ---------- LOGIN (guru) ---------- */
 function registerGuru() {
   const user = document.getElementById('guruUsername')?.value.trim();
@@ -503,8 +494,9 @@ function loginGuru() {
   const accounts = JSON.parse(localStorage.getItem('agendaApp_gurus')||'[]');
   const a = accounts.find(x=>x.user===user&&x.pass===pass);
   if (!a) return alert('Login gagal');
-  localStorage.setItem("agendaApp_loggedGuru", JSON.stringify(a)); // simpan session
+  localStorage.setItem("agendaApp_loggedGuru", JSON.stringify(a));
   tampilkanGuru(a);
+  updateLoginUI();  // 🔹 update tombol nav & tab
   alert("Login sukses!");
 }
 function tampilkanGuru(a) {
@@ -519,7 +511,7 @@ function cekLoginGuru() {
     try {
       const a = JSON.parse(g);
       tampilkanGuru(a);
-    } catch(e) { console.warn('session guru rusak'); localStorage.removeItem("agendaApp_loggedGuru"); }
+    } catch(e) { localStorage.removeItem("agendaApp_loggedGuru"); }
   }
 }
 function logoutGuru() {
@@ -528,23 +520,62 @@ function logoutGuru() {
   if (prof) prof.innerHTML = '';
   const statusEl = document.getElementById('guruStatus');
   if (statusEl) statusEl.textContent = 'Belum login.';
+  updateLoginUI();  // 🔹 update tombol nav & tab
 }
 
-/* ---------- Reminder Agenda ---------- */
-setInterval(() => {
-  const arr = getAgenda();
-  const h = (new Date()).getHours();
-  arr.forEach(a => {
-    const jamMap = { '1':7,'2':8,'3':9,'4':10,'5':11,'6':13,'7':14,'8':15,'9':16,'10':17 };
-    if (jamMap[a.jam] === h) {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Pengingat Agenda', { body: `${a.tgl} Jam ${a.jam}: ${a.teks}` });
-      }
-    }
-  });
-}, 60000);
+/* ---------- UPDATE UI LOGIN/LOGOUT ---------- */
+function updateLoginUI() {
+  const g = localStorage.getItem("agendaApp_loggedGuru");
+  const loginBtn = document.querySelector("nav.tabs .tab-button[onclick*='loginTab']");
+  const loginTab = document.getElementById("loginTab");
 
-/* ---------- INIT (single DOMContentLoaded) ---------- */
+  if (g) {
+    const a = JSON.parse(g);
+    if (loginBtn) {
+      loginBtn.textContent = "Logout";
+      loginBtn.onclick = () => { logoutGuru(); };
+    }
+    if (loginTab) {
+      loginTab.innerHTML = `
+        <h2>👩‍🏫 Guru Aktif</h2>
+        <div style="text-align:center; padding:20px;">
+          <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" 
+               alt="Guru" style="width:80px; height:80px; border-radius:50%; margin-bottom:10px;">
+          <p><strong>${a.user}</strong><br><small>${a.mapel}</small></p>
+          <button onclick="logoutGuru();">Logout</button>
+        </div>
+      `;
+    }
+  } else {
+    if (loginBtn) {
+      loginBtn.textContent = "Login";
+      loginBtn.setAttribute("onclick", "openTab('loginTab', this)");
+    }
+    if (loginTab) {
+      loginTab.innerHTML = `
+        <h2>🔐 Login / Register</h2>
+        <div class="form-row">
+          <input id="guruUsername" placeholder="Username">
+          <input id="guruPassword" placeholder="Password" type="password">
+          <select id="guruMapel">
+            <option value="">Pilih Mapel</option>
+            <option>Matematika</option>
+            <option>Pemrograman Web</option>
+          </select>
+          <button onclick="registerGuru()">Register (Guru)</button>
+          <button onclick="loginGuru();">Login (Guru)</button>
+        </div>
+        <div class="form-row">
+          <input id="siswaLoginNama" placeholder="Nama Siswa">
+          <button onclick="loginSiswa()">Login Siswa (View)</button>
+        </div>
+        <p id="guruStatus">Belum login.</p>
+      `;
+    }
+  }
+}
+
+/* ---------- INIT ---------- */
 function muatSemuaData() {
   populateSiswaSelect();
   renderSiswaTable();
@@ -558,14 +589,13 @@ function muatSemuaData() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  // restore selected kelas jika ada
   const sel = document.getElementById('kelasSelect');
   const savedK = localStorage.getItem('agendaApp_selectedKelas');
   if (sel && savedK) sel.value = savedK;
-
   loadTheme();
   initCalendar();
   initChart();
   muatSemuaData();
   cekLoginGuru();
+  updateLoginUI(); // 🔹 pastikan UI sesuai status
 });
