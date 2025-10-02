@@ -1,13 +1,6 @@
 /* ===================================================
    script.js - Aplikasi Agenda Kelas (LocalStorage)
-   Fitur: siswa CRUD, agenda (dgn lampiran), absensi, jadwal,
-   modul, kalender (FullCalendar), Chart.js, notifikasi,
-   tema, backup/restore, search/filter, multi-kelas.
-   =================================================== */
-
-/* ===================================================
-   script.js - Aplikasi Agenda Kelas (LocalStorage)
-   Final Version (gabungan semua fitur)
+   Final (perbaikan: jadwal responsif & session guru)
    =================================================== */
 
 /* ---------- KEY localStorage (per kelas) ---------- */
@@ -31,7 +24,8 @@ function downloadTextFile(filename, text) {
 function openTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
   if (btn) btn.classList.add('active');
 }
 
@@ -42,13 +36,17 @@ function loadTheme() {
   if (t === 'dark') document.body.classList.add('dark');
   else document.body.classList.remove('dark');
 }
-darkToggle?.addEventListener('click', () => {
-  document.body.classList.toggle('dark');
-  localStorage.setItem('agendaTheme', document.body.classList.contains('dark') ? 'dark' : 'light');
-});
+if (darkToggle) {
+  darkToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('agendaTheme', document.body.classList.contains('dark') ? 'dark' : 'light');
+  });
+}
 
 /* ---------- KELAS (multi-class) ---------- */
 function gantiKelas(kelas) {
+  // menyimpan pilihan kelas otomatis (opsional)
+  localStorage.setItem('agendaApp_selectedKelas', kelas);
   muatSemuaData();
 }
 
@@ -68,25 +66,29 @@ function simpanSiswa(arr) {
   localStorage.setItem(key('siswa'), JSON.stringify(arr));
 }
 function tambahSiswa() {
-  const nama = document.getElementById('siswaNama').value.trim();
-  const nis = document.getElementById('siswaNIS').value.trim();
-  const kelas = document.getElementById('siswaKelas').value || document.getElementById('kelasSelect').value;
+  const elNama = document.getElementById('siswaNama');
+  const elNIS = document.getElementById('siswaNIS');
+  if (!elNama || !elNIS) return alert('Form siswa tidak tersedia');
+  const nama = elNama.value.trim();
+  const nis = elNIS.value.trim();
+  const kelas = document.getElementById('siswaKelas')?.value || document.getElementById('kelasSelect')?.value;
   if (!nama || !nis) return alert('Isi NIS dan nama!');
   const arr = getSiswa();
   if (arr.find(s => s.nis === nis && s.kelas === kelas)) return alert('NIS sudah ada di kelas ini!');
   arr.push({ nis, nama, kelas });
   simpanSiswa(arr);
-  document.getElementById('siswaNama').value = '';
-  document.getElementById('siswaNIS').value = '';
+  elNama.value = '';
+  elNIS.value = '';
   renderSiswaTable();
   populateSiswaSelect();
 }
 
 /* render table siswa */
 function renderSiswaTable() {
+  const tbody = document.getElementById('siswaTable');
+  if (!tbody) return;
   const arr = getSiswa();
   const search = (document.getElementById('searchSiswa')?.value || '').toLowerCase();
-  const tbody = document.getElementById('siswaTable');
   tbody.innerHTML = '';
   arr.filter(s => !search || s.nama.toLowerCase().includes(search) || s.nis.includes(search))
     .forEach(s => {
@@ -134,57 +136,62 @@ function populateSiswaSelect() {
 /* ---------- IMPORT SISWA EXCEL ---------- */
 function importSiswaExcel() {
   const fileInput = document.getElementById('importSiswaFile');
-  if (!fileInput.files.length) return alert("Pilih file Excel/CSV dulu!");
+  if (!fileInput || !fileInput.files.length) return alert("Pilih file Excel/CSV dulu!");
   const file = fileInput.files[0];
   const reader = new FileReader();
 
   reader.onload = (e) => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet);
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet);
 
-    const arr = getSiswa();
-    rows.forEach(r => {
-      if (r.NIS && r.Nama) {
-        if (!arr.find(s => s.nis === String(r.NIS))) {
-          arr.push({
-            nis: String(r.NIS),
-            nama: r.Nama,
-            kelas: r.Kelas || document.getElementById("kelasSelect").value
-          });
+      const arr = getSiswa();
+      let added = 0;
+      rows.forEach(r => {
+        // accept columns: NIS, Nama, Kelas (case-insensitive)
+        const nis = r.NIS ?? r.nis ?? r['No'] ?? r['Nomor'] ?? r['Id'] ?? null;
+        const nama = r.Nama ?? r.nama ?? r.Name ?? null;
+        const kelas = r.Kelas ?? r.kelas ?? r.Class ?? null;
+        if (nis && nama) {
+          const nisStr = String(nis).trim();
+          if (!arr.find(s => s.nis === nisStr)) {
+            arr.push({
+              nis: nisStr,
+              nama: String(nama).trim(),
+              kelas: kelas ? String(kelas).trim() : (document.getElementById("kelasSelect")?.value || 'XI-RPL')
+            });
+            added++;
+          }
         }
-      }
-    });
-    simpanSiswa(arr);
-    renderSiswaTable();
-    populateSiswaSelect();
-    alert("Import berhasil!");
+      });
+      simpanSiswa(arr);
+      renderSiswaTable();
+      populateSiswaSelect();
+      alert(`Import selesai. ${added} siswa ditambahkan.`);
+    } catch (err) {
+      console.error(err);
+      alert('Gagal membaca file. Pastikan format Excel benar.');
+    }
   };
 
   reader.readAsArrayBuffer(file);
 }
 
-
 /* ---------- DOWNLOAD TEMPLATE EXCEL ---------- */
 function downloadTemplateSiswa() {
-  // Buat data template
   const ws_data = [
     ["NIS", "Nama", "Kelas"],
     ["12345", "Budi Santoso", "XI-RPL"],
     ["12346", "Siti Aminah", "XI-RPL"]
   ];
-  
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(ws_data);
   XLSX.utils.book_append_sheet(wb, ws, "TemplateSiswa");
-
-  // Simpan sebagai file Excel
   XLSX.writeFile(wb, "template_siswa.xlsx");
 }
-
-
 
 /* ---------- AGENDA ---------- */
 function getAgenda() { return JSON.parse(localStorage.getItem(key('agenda')) || '[]'); }
@@ -198,9 +205,13 @@ async function fileToDataUrl(file) {
   });
 }
 async function tambahAgenda() {
-  const teks = document.getElementById('agendaInput').value.trim();
-  const tgl = document.getElementById('agendaDate').value;
-  const jam = document.getElementById('agendaJam').value;
+  const teksEl = document.getElementById('agendaInput');
+  const tglEl = document.getElementById('agendaDate');
+  const jamEl = document.getElementById('agendaJam');
+  if (!teksEl || !tglEl || !jamEl) return alert('Form agenda tidak lengkap');
+  const teks = teksEl.value.trim();
+  const tgl = tglEl.value;
+  const jam = jamEl.value;
   if (!teks || !tgl || !jam) return alert('Isi teks, tanggal, dan jam!');
   let lampiran = null;
   const fileInput = document.getElementById('agendaFile');
@@ -210,16 +221,17 @@ async function tambahAgenda() {
   const arr = getAgenda();
   arr.push({ teks, tgl, jam, lampiran, komentar: [] });
   simpanAgenda(arr);
-  document.getElementById('agendaInput').value = '';
+  teksEl.value = '';
   renderAgendaList();
   refreshCalendarEvents();
   updateDashboard();
 }
 function renderAgendaList() {
+  const list = document.getElementById('agendaList');
+  if (!list) return;
   const arr = getAgenda();
   const search = (document.getElementById('searchAgenda')?.value || '').toLowerCase();
   const filterJam = (document.getElementById('filterAgendaJam')?.value || '');
-  const list = document.getElementById('agendaList');
   list.innerHTML = '';
   arr.filter(a => (!search || a.teks.toLowerCase().includes(search) || a.tgl.includes(search))
                  && (!filterJam || a.jam === filterJam))
@@ -266,8 +278,8 @@ function exportAgendaPDF() {
 function getAbsensi() { return JSON.parse(localStorage.getItem(key('absensi')) || '[]'); }
 function simpanAbsensi(arr) { localStorage.setItem(key('absensi'), JSON.stringify(arr)); }
 function tandaiAbsen() {
-  const nama = document.getElementById('siswaSelect').value;
-  const status = document.getElementById('statusSelect').value;
+  const nama = document.getElementById('siswaSelect')?.value;
+  const status = document.getElementById('statusSelect')?.value;
   if (!nama || !status) return alert('Pilih siswa & status');
   const arr = getAbsensi();
   const hari = (new Date()).toISOString().slice(0,10);
@@ -276,8 +288,9 @@ function tandaiAbsen() {
   renderAbsensiTable(); updateDashboard();
 }
 function renderAbsensiTable() {
-  const arr = getAbsensi();
   const tbody = document.getElementById('absenList');
+  if (!tbody) return;
+  const arr = getAbsensi();
   const search = (document.getElementById('searchAbsen')?.value || '').toLowerCase();
   const filter = (document.getElementById('filterAbsen')?.value || '');
   tbody.innerHTML = '';
@@ -299,12 +312,14 @@ function exportAbsensiCSV() {
 
 /* ---------- CATATAN ---------- */
 function simpanCatatan() {
-  const teks = document.getElementById('catatanInput').value.trim();
+  const teks = document.getElementById('catatanInput')?.value.trim() || '';
   localStorage.setItem(key('catatan'), teks);
   muatCatatan();
 }
 function muatCatatan() {
-  document.getElementById('catatanDisplay').textContent = localStorage.getItem(key('catatan') ) || '-';
+  const el = document.getElementById('catatanDisplay');
+  if (!el) return;
+  el.textContent = localStorage.getItem(key('catatan') ) || '-';
 }
 function exportCatatanPDF() {
   const { jsPDF } = window.jspdf;
@@ -317,10 +332,11 @@ function exportCatatanPDF() {
 /* ---------- JADWAL ---------- */
 function simpanJadwal() {
   const rows = [];
-  document.querySelectorAll('#jadwalTable tbody tr').forEach(tr => {
+  const trs = document.querySelectorAll('#jadwalTable tbody tr');
+  trs.forEach(tr => {
     const hari = tr.cells[0].textContent;
     const mapel = [];
-    for (let i=1;i<=10;i++) mapel.push(tr.cells[i].textContent || '-');
+    for (let i=1;i<=10;i++) mapel.push((tr.cells[i]?.textContent || '-').trim() || '-');
     rows.push({ hari, mapel });
   });
   localStorage.setItem(key('jadwal'), JSON.stringify(rows));
@@ -328,8 +344,11 @@ function simpanJadwal() {
 }
 function muatJadwal() {
   const data = JSON.parse(localStorage.getItem(key('jadwal') ) || '[]');
+  const tbody = document.querySelector('#jadwalTable tbody');
+  if (!tbody) return;
+  // jika tidak ada data, biarkan tabel HTML default (sudah ada baris kosong)
   if (!data.length) return;
-  const tbody = document.querySelector('#jadwalTable tbody'); tbody.innerHTML = '';
+  tbody.innerHTML = '';
   data.forEach(d => {
     const tr = document.createElement('tr');
     const td = document.createElement('td'); td.textContent = d.hari; tr.appendChild(td);
@@ -347,7 +366,7 @@ function exportJadwalPDF() {
 /* ---------- MODUL ---------- */
 function uploadModul() {
   const input = document.getElementById('modulInput');
-  if (!input.files.length) return alert('Pilih file');
+  if (!input || !input.files.length) return alert('Pilih file');
   const file = input.files[0];
   const r = new FileReader();
   r.onload = e => {
@@ -360,6 +379,7 @@ function uploadModul() {
 }
 function renderModulList() {
   const list = document.getElementById('modulList');
+  if (!list) return;
   list.innerHTML = '';
   (JSON.parse(localStorage.getItem(key('modul'))||'[]')).forEach((m,idx) => {
     const li = document.createElement('li');
@@ -369,7 +389,7 @@ function renderModulList() {
 }
 function hapusModul(i) { const arr = JSON.parse(localStorage.getItem(key('modul'))||'[]'); arr.splice(i,1); localStorage.setItem(key('modul'), JSON.stringify(arr)); renderModulList(); }
 
-/* ---------- KALENDER ---------- */
+/* ---------- KALENDER (FullCalendar) ---------- */
 let calendar = null;
 function initCalendar() {
   const el = document.getElementById('calendar');
@@ -380,7 +400,8 @@ function initCalendar() {
     selectable: true,
     events: getAgenda().map((a,idx) => ({ id: idx, title: `Jam ${a.jam}: ${a.teks}`, start: a.tgl })),
     dateClick(info) {
-      document.getElementById('agendaDate').value = info.dateStr;
+      const dateEl = document.getElementById('agendaDate');
+      if (dateEl) dateEl.value = info.dateStr;
       openTab('agendaTab');
     },
     eventClick(info) {
@@ -403,7 +424,9 @@ function refreshCalendarEvents() {
 /* ---------- CHART (absensi) ---------- */
 let absensiChart = null;
 function initChart() {
-  const ctx = document.getElementById('absensiChart').getContext('2d');
+  const canvas = document.getElementById('absensiChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
   absensiChart = new Chart(ctx, {
     type: 'pie',
     data: { labels: ['Hadir','Izin','Alpha'], datasets: [{ data:[0,0,0], backgroundColor:['#28a745','#ffc107','#dc3545'] }] },
@@ -412,6 +435,7 @@ function initChart() {
   updateChart();
 }
 function updateChart() {
+  if (!absensiChart) return;
   const arr = getAbsensi();
   const today = (new Date()).toISOString().slice(0,10);
   const todayAbs = arr.filter(a => a.hari === today);
@@ -424,15 +448,18 @@ function updateChart() {
 
 /* ---------- DASHBOARD UPDATE ---------- */
 function updateDashboard() {
-  document.getElementById('countAgenda').textContent = getAgenda().length;
+  const countAgendaEl = document.getElementById('countAgenda');
+  if (countAgendaEl) countAgendaEl.textContent = getAgenda().length;
   const arr = getAbsensi();
   const today = (new Date()).toISOString().slice(0,10);
   const todayAbs = arr.filter(a => a.hari === today);
   const hadir = todayAbs.filter(a => a.status==='Hadir').length;
   const izin = todayAbs.filter(a => a.status==='Izin').length;
   const alpha = todayAbs.filter(a => a.status==='Alpha').length;
-  document.getElementById('countAbsensi').textContent = `Hadir:${hadir} | Izin:${izin} | Alpha:${alpha}`;
-  document.getElementById('lastCatatan').textContent = localStorage.getItem(key('catatan')) || '-';
+  const countAbsensiEl = document.getElementById('countAbsensi');
+  if (countAbsensiEl) countAbsensiEl.textContent = `Hadir:${hadir} | Izin:${izin} | Alpha:${alpha}`;
+  const lastCatEl = document.getElementById('lastCatatan');
+  if (lastCatEl) lastCatEl.textContent = localStorage.getItem(key('catatan')) || '-';
   updateChart();
 }
 
@@ -445,7 +472,7 @@ function exportAllJSON() {
 }
 function importAllJSON() {
   const f = document.getElementById('importFile');
-  if (!f.files.length) return alert('Pilih file JSON');
+  if (!f || !f.files.length) return alert('Pilih file JSON');
   const r = new FileReader();
   r.onload = e => {
     try {
@@ -458,11 +485,11 @@ function importAllJSON() {
   r.readAsText(f.files[0]);
 }
 
-/* ---------- LOGIN ---------- */
+/* ---------- LOGIN (guru) ---------- */
 function registerGuru() {
-  const user = document.getElementById('guruUsername').value.trim();
-  const pass = document.getElementById('guruPassword').value.trim();
-  const mapel = document.getElementById('guruMapel').value;
+  const user = document.getElementById('guruUsername')?.value.trim();
+  const pass = document.getElementById('guruPassword')?.value.trim();
+  const mapel = document.getElementById('guruMapel')?.value;
   if (!user||!pass||!mapel) return alert('Isi semua field');
   const accounts = JSON.parse(localStorage.getItem('agendaApp_gurus')||'[]');
   if (accounts.find(a=>a.user===user)) return alert('Username sudah ada');
@@ -471,19 +498,36 @@ function registerGuru() {
   alert('Registrasi sukses');
 }
 function loginGuru() {
-  const user = document.getElementById('guruUsername').value.trim();
-  const pass = document.getElementById('guruPassword').value.trim();
+  const user = document.getElementById('guruUsername')?.value.trim();
+  const pass = document.getElementById('guruPassword')?.value.trim();
   const accounts = JSON.parse(localStorage.getItem('agendaApp_gurus')||'[]');
   const a = accounts.find(x=>x.user===user&&x.pass===pass);
   if (!a) return alert('Login gagal');
-  document.getElementById('guruStatus').textContent = `Login sebagai: ${a.user} (${a.mapel})`;
-  const prof = document.getElementById("guruProfile");
-  prof.innerHTML = `👩‍🏫 Halo, ${a.user} <small>(${a.mapel})</small>`;
+  localStorage.setItem("agendaApp_loggedGuru", JSON.stringify(a)); // simpan session
+  tampilkanGuru(a);
+  alert("Login sukses!");
 }
-function loginSiswa() {
-  const nama = document.getElementById('siswaLoginNama').value.trim();
-  if (!nama) return alert('Isi nama siswa');
-  alert('Login siswa (view) sebagai: ' + nama);
+function tampilkanGuru(a) {
+  const statusEl = document.getElementById('guruStatus');
+  if (statusEl) statusEl.textContent = `Login sebagai: ${a.user} (${a.mapel})`;
+  const prof = document.getElementById("guruProfile");
+  if (prof) prof.innerHTML = `👩‍🏫 Halo, ${a.user} <small>(${a.mapel})</small>`;
+}
+function cekLoginGuru() {
+  const g = localStorage.getItem("agendaApp_loggedGuru");
+  if (g) {
+    try {
+      const a = JSON.parse(g);
+      tampilkanGuru(a);
+    } catch(e) { console.warn('session guru rusak'); localStorage.removeItem("agendaApp_loggedGuru"); }
+  }
+}
+function logoutGuru() {
+  localStorage.removeItem("agendaApp_loggedGuru");
+  const prof = document.getElementById("guruProfile");
+  if (prof) prof.innerHTML = '';
+  const statusEl = document.getElementById('guruStatus');
+  if (statusEl) statusEl.textContent = 'Belum login.';
 }
 
 /* ---------- Reminder Agenda ---------- */
@@ -500,7 +544,7 @@ setInterval(() => {
   });
 }, 60000);
 
-/* ---------- INIT ---------- */
+/* ---------- INIT (single DOMContentLoaded) ---------- */
 function muatSemuaData() {
   populateSiswaSelect();
   renderSiswaTable();
@@ -512,9 +556,16 @@ function muatSemuaData() {
   refreshCalendarEvents();
   updateDashboard();
 }
+
 window.addEventListener('DOMContentLoaded', () => {
+  // restore selected kelas jika ada
+  const sel = document.getElementById('kelasSelect');
+  const savedK = localStorage.getItem('agendaApp_selectedKelas');
+  if (sel && savedK) sel.value = savedK;
+
   loadTheme();
   initCalendar();
   initChart();
   muatSemuaData();
+  cekLoginGuru();
 });

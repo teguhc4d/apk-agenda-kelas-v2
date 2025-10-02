@@ -77,3 +77,19 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
   color: #555;
   font-weight: normal;
 }
+
+
+/* Jadwal table wrapper agar bisa scroll di HP */
+.jadwal-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+.jadwal-wrapper table {
+  min-width: 800px; /* biar nggak hancur */
+  border-collapse: collapse;
+}
+.jadwal-wrapper th, .jadwal-wrapper td {
+  padding: 6px;
+  border: 1px solid #ccc;
+  text-align: center;
+}
