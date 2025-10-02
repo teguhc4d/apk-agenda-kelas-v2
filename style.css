@@ -1,5 +1,6 @@
 /* ===================================================
    style.css - Aplikasi Agenda Kelas (LocalStorage)
+   Final Versi
    =================================================== */
 
 /* Reset basic */
@@ -68,7 +69,7 @@ body.dark .card { background:#081426; color:#cfe6ff; }
 body.dark footer { background:#08304b; }
 body.dark input, body.dark select, body.dark textarea { background:#071226; color:#dfeeff; border:1px solid rgba(255,255,255,0.03); }
 
-
+/* Profil Guru di header */
 #guruProfile {
   font-weight: 600;
   color: #0d6efd;
@@ -78,18 +79,21 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
   font-weight: normal;
 }
 
-
 /* Jadwal table wrapper agar bisa scroll di HP */
 .jadwal-wrapper {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* smooth scroll di HP */
 }
 .jadwal-wrapper table {
-  min-width: 800px; /* biar nggak hancur */
+  width: auto;          /* jangan paksa 100% */
+  min-width: 900px;     /* sesuaikan jumlah kolom */
   border-collapse: collapse;
 }
-.jadwal-wrapper th, .jadwal-wrapper td {
+.jadwal-wrapper th,
+.jadwal-wrapper td {
   padding: 6px;
   border: 1px solid #ccc;
   text-align: center;
+  white-space: nowrap;  /* cegah teks patah */
 }
