@@ -175,3 +175,27 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
     width: 100%;
   }
 }
+
+@media (max-width: 768px) {
+  /* Tabs jadi grid 4 kolom */
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 kolom */
+    gap: 8px;
+    width: 100%;
+  }
+  .tab-button {
+    width: 100%;
+    max-width: unset;   /* hilangkan batasan max 200px */
+    text-align: center;
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  /* Dark Mode toggle biar tidak terlalu kecil */
+  #darkModeToggle {
+    min-width: 100px;    /* lebar minimum */
+    min-height: 40px;    /* tinggi minimum */
+    padding: 10px 16px;  /* ruang klik lebih besar */
+    font-size: 15px;
+
