@@ -1,6 +1,6 @@
 /* ===================================================
    style.css - Aplikasi Agenda Kelas (LocalStorage)
-   Final Versi
+   Final Versi Responsif
    =================================================== */
 
 /* Reset basic */
@@ -11,9 +11,9 @@ body { background: #f4f6f8; color:#222; min-height:100vh; display:flex; justify-
 .container { width:100%; max-width:1200px; }
 
 /* Header */
-.app-header { position: relative; display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:18px; }
+.app-header { position: relative; display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
 .title-wrap { display:flex; align-items:center; gap:10px; }
-.title-wrap h1 { font-size:34px; }
+.title-wrap h1 { font-size:34px; text-align:center; }
 .header-right { position:absolute; right:0; display:flex; gap:10px; align-items:center; }
 
 /* buttons, tabs */
@@ -98,30 +98,34 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
   white-space: nowrap;  /* cegah teks patah */
 }
 
-
-
 /* Responsif untuk layar kecil */
 @media (max-width: 768px) {
-  /* Header: mengatur posisi dan ukuran */
+  /* Header responsif */
   .app-header {
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 10px 0;
   }
   .title-wrap {
     flex-direction: column;
     align-items: center;
+    text-align: center;
   }
   .header-right {
-    position: static;
-    width: 100%;
+    position: static;      /* jangan absolute */
     justify-content: center;
-    margin-top: 10px;
+    width: 100%;
+    margin-top: 8px;
     flex-wrap: wrap;
   }
+  #darkModeToggle {
+    width: auto;
+    padding: 8px 14px;
+    font-size: 14px;
+  }
 
-  /* Tabs: agar tombol tab berjejer di bawah, tidak terlalu melebar */
+  /* Tabs */
   .tabs {
     flex-direction: column;
     align-items: center;
@@ -132,7 +136,7 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
     max-width: 200px;
   }
 
-  /* Dashboard cards: vertical stacking */
+  /* Dashboard cards */
   .dashboard-row {
     flex-direction: column;
   }
@@ -149,7 +153,7 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
     width: 100% !important;
   }
 
-  /* Tabel jadwal supaya bisa di scroll secara horizontal */
+  /* Tabel jadwal supaya bisa di scroll */
   .jadwal-wrapper {
     overflow-x: auto;
   }
@@ -157,7 +161,7 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
     min-width: 900px;
   }
 
-  /* Form dan input */
+  /* Form */
   .form-row {
     flex-direction: column;
     align-items: stretch;
@@ -166,7 +170,7 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
     width: 100%;
     box-sizing: border-box;
   }
-  /* Tombol agar memenuhi lebar */
+  /* Tombol */
   button {
     width: 100%;
   }
