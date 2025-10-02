@@ -118,14 +118,14 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
     width: 100%;
     margin-top: 8px;
     flex-wrap: wrap;
-  }
+  /* }
   #darkModeToggle {
     width: auto;
     padding: 8px 14px;
     font-size: 14px;
-  }
+  } */
 
-  /* Tabs */
+  /* /* Tabs */
   .tabs {
     flex-direction: column;
     align-items: center;
@@ -134,7 +134,7 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
   .tab-button {
     width: 100%;
     max-width: 200px;
-  }
+  } */
 
   /* Dashboard cards */
   .dashboard-row {
@@ -198,4 +198,5 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
     min-height: 40px;    /* tinggi minimum */
     padding: 10px 16px;  /* ruang klik lebih besar */
     font-size: 15px;
+
 
