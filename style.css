@@ -97,3 +97,77 @@ body.dark input, body.dark select, body.dark textarea { background:#071226; colo
   text-align: center;
   white-space: nowrap;  /* cegah teks patah */
 }
+
+
+
+/* Responsif untuk layar kecil */
+@media (max-width: 768px) {
+  /* Header: mengatur posisi dan ukuran */
+  .app-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+  }
+  .title-wrap {
+    flex-direction: column;
+    align-items: center;
+  }
+  .header-right {
+    position: static;
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* Tabs: agar tombol tab berjejer di bawah, tidak terlalu melebar */
+  .tabs {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab-button {
+    width: 100%;
+    max-width: 200px;
+  }
+
+  /* Dashboard cards: vertical stacking */
+  .dashboard-row {
+    flex-direction: column;
+  }
+  .card {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  /* Chart dan kalender */
+  .chart-row {
+    padding: 10px;
+  }
+  #calendar {
+    width: 100% !important;
+  }
+
+  /* Tabel jadwal supaya bisa di scroll secara horizontal */
+  .jadwal-wrapper {
+    overflow-x: auto;
+  }
+  .jadwal-wrapper table {
+    min-width: 900px;
+  }
+
+  /* Form dan input */
+  .form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  input, select, textarea {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  /* Tombol agar memenuhi lebar */
+  button {
+    width: 100%;
+  }
+}
